@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { calculateScores } from '../lib/scoring';
 import { getCompareSummary } from '../lib/gemini.js';
-import { formatCurrency, formatNumber, monthlyPayment, monthlyElectricity } from '../utils/humanize.js';
+import { formatCurrency, monthlyPayment, monthlyElectricity } from '../utils/humanize.js';
 import { clsx } from 'clsx';
 
 const CompareView = ({ onClose }) => {
@@ -11,170 +11,247 @@ const CompareView = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
 
   const selectedCars = useMemo(() => {
-    const cars = compareList.map(id => fleet.find(c => c.id === id)).filter(Boolean);
+    const cars = compareList.map((id) => fleet.find((c) => c.id === id)).filter(Boolean);
     return calculateScores(cars, scenarioPriorityOrder);
   }, [compareList, fleet, scenarioPriorityOrder]);
 
   useEffect(() => {
     setLoading(true);
     getCompareSummary(scenarioPriorityOrder, selectedCars)
-      .then(res => setAiSummary(res))
+      .then((res) => setAiSummary(res))
       .finally(() => setLoading(false));
   }, [selectedCars, scenarioPriorityOrder]);
 
   if (selectedCars.length < 2) return null;
 
-  const highestScore = Math.max(...selectedCars.map(c => c.score));
+  const highestScore = Math.max(...selectedCars.map((c) => c.score));
+  const n = selectedCars.length;
+
+  const gridTemplate = `minmax(10.5rem, 13rem) repeat(${n}, minmax(0, 1fr))`;
 
   const sections = [
     {
-      title: 'WHAT IT COSTS',
+      title: 'What it costs',
       rows: [
         { label: 'Price', key: 'priceThb', format: (v) => formatCurrency(v) },
-        { label: 'Monthly payment', key: 'priceThb', format: (v) => formatCurrency(monthlyPayment(v)) + '/mo' },
-        { label: 'Electricity/month', key: 'id', format: (_, car) => formatCurrency(monthlyElectricity(car.rangeCity, car.efficiencyKwhPer100km)) + '/mo' },
-        { label: '5-year total', key: 'priceThb', format: (v, car) => formatCurrency((monthlyPayment(v) * 60) + (monthlyElectricity(car.rangeCity, car.efficiencyKwhPer100km) * 60) + (v * 0.2)) }
-      ]
+        {
+          label: 'Monthly payment',
+          key: 'priceThb',
+          format: (v) => `${formatCurrency(monthlyPayment(v))}/mo`,
+        },
+        {
+          label: 'Electricity / month',
+          key: 'id',
+          format: (_, car) =>
+            `${formatCurrency(monthlyElectricity(car.rangeCity, car.efficiencyKwhPer100km))}/mo`,
+        },
+        {
+          label: '5-year total (rough)',
+          key: 'priceThb',
+          format: (v, car) =>
+            formatCurrency(
+              monthlyPayment(v) * 60 +
+                monthlyElectricity(car.rangeCity, car.efficiencyKwhPer100km) * 60 +
+                v * 0.2
+            ),
+        },
+      ],
     },
     {
-      title: 'CAN YOU DO THE TRIP',
+      title: 'Can you do the trip',
       rows: [
         { label: 'City range', key: 'rangeCity', format: (v) => `${v} km` },
         { label: 'Highway range', key: 'rangeHighway', format: (v) => `${v} km` },
-        { label: 'Bangkok → Hua Hin', key: 'rangeHighway', format: (v) => v >= 450 ? 'Yes' : v >= 200 ? 'Tight' : 'No' },
-        { label: 'Charges to 80% (DC)', key: 'timeToEightyMin', format: (v) => `~${v} min` }
-      ]
+        {
+          label: 'Bangkok → Hua Hin',
+          key: 'rangeHighway',
+          format: (v) => (v >= 450 ? 'Yes' : v >= 200 ? 'Tight' : 'No'),
+        },
+        { label: 'Charge to 80% (DC)', key: 'timeToEightyMin', format: (v) => `~${v} min` },
+      ],
     },
     {
-      title: 'HOW IT FEELS',
+      title: 'How it feels',
       rows: [
         { label: '0–100 km/h', key: 'zeroToHundred', format: (v) => `${v}s` },
-        { label: 'Drive type', key: 'driveType', format: (v) => v }
-      ]
+        { label: 'Drive type', key: 'driveType', format: (v) => v, noHighlight: true },
+      ],
     },
     {
-      title: 'DOES IT FIT YOUR LIFE',
+      title: 'Does it fit your life',
       rows: [
-        { label: 'Boot space', key: 'bootL', format: (v) => `${v}L` },
-        { label: 'Seats', key: 'seats', format: (v) => v },
-        { label: 'Car length', key: 'lengthMm', format: (v) => `${(v/1000).toFixed(2)}m` }
-      ]
+        { label: 'Boot', key: 'bootL', format: (v) => `${v} L` },
+        { label: 'Seats', key: 'seats', format: (v) => String(v) },
+        { label: 'Length', key: 'lengthMm', format: (v) => `${(v / 1000).toFixed(2)} m` },
+      ],
     },
     {
-      title: 'PEACE OF MIND',
+      title: 'Peace of mind',
       rows: [
-        { label: 'Warranty', key: 'warrantyYears', format: (v) => `${v} years` },
-        { label: 'Bangkok service centers', key: 'bangkokServiceCenters', format: (v) => v },
-        { label: 'Safety rating', key: 'safetyScore', format: (v) => '★'.repeat(v) + '☆'.repeat(5-v) },
-        { label: 'Made in', key: 'countryOfOrigin', format: (v) => v, noHighlight: true }
-      ]
-    }
+        { label: 'Warranty', key: 'warrantyYears', format: (v) => `${v} yr` },
+        { label: 'Bangkok service centers', key: 'bangkokServiceCenters', format: (v) => String(v) },
+        {
+          label: 'Safety',
+          key: 'safetyScore',
+          format: (v) => (v > 0 ? '★'.repeat(Math.min(5, v)) + '☆'.repeat(Math.max(0, 5 - v)) : '—'),
+        },
+        { label: 'Made in', key: 'countryOfOrigin', format: (v) => v, noHighlight: true },
+      ],
+    },
   ];
 
-  const findWinner = (row, cars) => {
-    if (row.noHighlight) return null;
-    const values = cars.map(car => {
-       if (row.key === 'id') return monthlyElectricity(car.rangeCity, car.efficiencyKwhPer100km);
-       if (row.label === '5-year total') return (monthlyPayment(car.priceThb) * 60) + (monthlyElectricity(car.rangeCity, car.efficiencyKwhPer100km) * 60) + (car.priceThb * 0.2);
-       return car[row.key];
-    });
+  const numericForRow = (row, car) => {
+    if (row.key === 'id') return monthlyElectricity(car.rangeCity, car.efficiencyKwhPer100km);
+    if (row.label === '5-year total (rough)')
+      return (
+        monthlyPayment(car.priceThb) * 60 +
+        monthlyElectricity(car.rangeCity, car.efficiencyKwhPer100km) * 60 +
+        car.priceThb * 0.2
+      );
+    const v = car[row.key];
+    return typeof v === 'number' ? v : Number(v) || 0;
+  };
 
-    // For these, lower is better
-    const lowerIsBetter = ['Price', 'Monthly payment', 'Electricity/month', '5-year total', '0–100 km/h', 'Car length'].includes(row.label);
-    
-    const bestValue = lowerIsBetter ? Math.min(...values) : Math.max(...values);
-    return cars.findIndex(car => {
-       if (row.key === 'id') return monthlyElectricity(car.rangeCity, car.efficiencyKwhPer100km) === bestValue;
-       if (row.label === '5-year total') return ((monthlyPayment(car.priceThb) * 60) + (monthlyElectricity(car.rangeCity, car.efficiencyKwhPer100km) * 60) + (car.priceThb * 0.2)) === bestValue;
-       return car[row.key] === bestValue;
-    });
+  const findWinnerIndex = (row, cars) => {
+    if (row.noHighlight) return null;
+    const values = cars.map((car) => numericForRow(row, car));
+    const lowerIsBetter = [
+      'Price',
+      'Monthly payment',
+      'Electricity / month',
+      '5-year total (rough)',
+      '0–100 km/h',
+      'Length',
+    ].includes(row.label);
+    const best = lowerIsBetter ? Math.min(...values) : Math.max(...values);
+    const idx = values.findIndex((v) => v === best);
+    return idx;
   };
 
   return (
-    <div className="fixed inset-0 z-[110] bg-[#F5F3EE] overflow-y-auto step-transition">
-      <div className="max-w-7xl mx-auto px-6 py-20">
-        <div className="flex justify-between items-center mb-16">
-          <h1 className="text-6xl font-serif uppercase tracking-bauhaus-heading">THE VERDICT</h1>
-          <button 
+    <div
+      className="fixed inset-0 z-[185] flex flex-col justify-end bg-black/35 backdrop-blur-sm sm:justify-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="compare-title"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[92dvh] min-h-0 flex-1 flex-col bg-[#F2F2F7] sm:max-h-[calc(100dvh-2rem)] sm:max-w-6xl sm:flex-none sm:rounded-2xl sm:border sm:border-black/[0.08] sm:shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-black/[0.08] px-4 py-3 sm:px-6 sm:py-4">
+          <div>
+            <h1 id="compare-title" className="text-[22px] font-semibold tracking-tight text-[#1C1C1E] sm:text-[26px]">
+              Compare
+            </h1>
+            <p className="mt-0.5 text-[14px] text-[#8E8E93]">Side-by-side specs · best value per row highlighted in blue</p>
+          </div>
+          <button
+            type="button"
             onClick={onClose}
-            className="text-4xl font-serif text-[#1A1A18]/30 hover:text-[#007AFF] transition-colors"
+            className="min-h-[44px] shrink-0 rounded-xl px-4 text-[15px] font-semibold text-[#007AFF] active:opacity-70"
           >
-            × CLOSE
+            Done
           </button>
-        </div>
+        </header>
 
-        {/* Layer 1: Score Bar Header */}
-        <div className="grid grid-cols-12 gap-0 mb-20 border-b-4 border-[#1A1A18]">
-          <div className="col-span-3"></div>
-          {selectedCars.map(car => (
-            <div key={car.id} className="col-span-3 p-8 border-l-2 border-[#1A1A18]/10 text-center">
-              <h3 className="text-2xl font-serif mb-1 leading-tight uppercase tracking-bauhaus-heading">{car.brand} {car.model}</h3>
-              <p className="label uppercase tracking-widest text-muted font-bold mb-6">{car.countryOfOrigin}</p>
-              
-              <div className="relative h-4 bg-[#1A1A18]/5 rounded-full overflow-hidden mb-4">
-                <div 
-                  className={clsx(
-                    "absolute top-0 left-0 h-full transition-all duration-1000",
-                    car.score === highestScore ? "bg-[#007AFF]" : "bg-[#1A1A18]"
-                  )}
-                  style={{ width: `${car.score}%` }}
-                />
-              </div>
-              <div className="flex justify-between items-baseline">
-                <span className="label lowercase tracking-widest text-[#1A1A18]/40">Your match score</span>
-                <span className="text-3xl font-serif">{car.score}</span>
-              </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-4 sm:px-6">
+          {/* Car column headers + match */}
+          <div
+            className="mb-6 gap-px overflow-hidden rounded-xl border border-black/[0.08] bg-black/[0.08] shadow-sm"
+            style={{ display: 'grid', gridTemplateColumns: gridTemplate }}
+          >
+            <div className="flex min-h-[5rem] items-center bg-[#E5E5EA] px-3 py-3 sm:px-4">
+              <span className="text-[12px] font-semibold uppercase tracking-wide text-[#636366]">Match</span>
             </div>
-          ))}
-        </div>
+            {selectedCars.map((car) => (
+              <div
+                key={car.id}
+                className="flex min-h-[5rem] flex-col justify-center bg-white px-3 py-3 text-center sm:px-4"
+              >
+                <p className="text-[15px] font-semibold leading-tight text-[#1C1C1E] sm:text-[16px]">
+                  {car.brand} {car.model}
+                </p>
+                <p className="mt-1 text-[12px] text-[#8E8E93]">{car.countryOfOrigin}</p>
+                <div className="mt-3">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-[#E5E5EA]">
+                    <div
+                      className={clsx(
+                        'h-full rounded-full transition-all',
+                        car.score === highestScore ? 'bg-[#007AFF]' : 'bg-[#AEAEB2]'
+                      )}
+                      style={{ width: `${car.score}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-[20px] font-semibold tabular-nums text-[#1C1C1E]">{car.score}</p>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-[#8E8E93]">Your match</p>
+                </div>
+              </div>
+            ))}
+          </div>
 
-        {/* Layer 2: Spec Table */}
-        <div className="mb-20">
-          {sections.map(section => (
-            <div key={section.title} className="mb-16">
-              <h2 className="text-3xl font-serif mb-8 p-4 bg-[#1A1A18] text-white uppercase tracking-widest">{section.title}</h2>
-              <div className="grid grid-cols-12 gap-0">
-                {section.rows.map(row => {
-                  const winnerIndex = findWinner(row, selectedCars);
+          {sections.map((section) => (
+            <div key={section.title} className="mb-6">
+              <h2 className="mb-2 px-1 text-[13px] font-semibold uppercase tracking-wide text-[#8E8E93]">
+                {section.title}
+              </h2>
+              <div
+                className="overflow-hidden rounded-xl border border-black/[0.08] bg-black/[0.06]"
+                style={{ display: 'grid', gridTemplateColumns: gridTemplate }}
+              >
+                {section.rows.map((row, rowIdx) => {
+                  const winnerIdx = findWinnerIndex(row, selectedCars);
+                  const isLast = rowIdx === section.rows.length - 1;
                   return (
                     <React.Fragment key={row.label}>
-                      <div className="col-span-3 p-6 border-b-2 border-[#1A1A18]/10 bg-[#1A1A18]/5">
-                        <span className="label uppercase tracking-widest font-bold text-[#1A1A18]/60">{row.label}</span>
+                      <div
+                        className={clsx(
+                          'flex items-center border-black/[0.06] bg-[#F2F2F7] px-3 py-3 sm:px-4',
+                          !isLast && 'border-b'
+                        )}
+                      >
+                        <span className="text-[14px] font-medium leading-snug text-[#636366]">{row.label}</span>
                       </div>
-                      {selectedCars.map((car, idx) => (
-                        <div key={car.id} className="col-span-3 p-6 border-b-2 border-l-2 border-[#1A1A18]/10 text-center relative">
-                          <span className={clsx(
-                            "text-xl font-mono tracking-bauhaus-mono",
-                            idx === winnerIndex && "text-[#007AFF] font-bold"
-                          )}>
-                            {row.format(car[row.key], car)}
-                          </span>
-                          {idx === winnerIndex && (
-                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#007AFF]" />
-                          )}
-                        </div>
-                      ))}
+                      {selectedCars.map((car, idx) => {
+                        const isWin = winnerIdx === idx;
+                        return (
+                          <div
+                            key={car.id}
+                            className={clsx(
+                              'flex items-center justify-center border-black/[0.06] bg-white px-2 py-3 text-center sm:px-3',
+                              !isLast && 'border-b',
+                              isWin && 'bg-[rgba(0,122,255,0.07)]'
+                            )}
+                          >
+                            <span
+                              className={clsx(
+                                'text-[15px] font-semibold tabular-nums text-[#1C1C1E] sm:text-[16px]',
+                                isWin && 'text-[#007AFF]'
+                              )}
+                            >
+                              {row.format(car[row.key], car)}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </React.Fragment>
                   );
                 })}
               </div>
             </div>
           ))}
-        </div>
 
-        {/* AI Compare Summary */}
-        <div className="p-16 bg-[#1A1A18] text-white mb-20 shadow-2xl relative overflow-hidden">
-           <div className="absolute top-0 left-0 w-2 h-full bg-[#007AFF]" />
-           <div className="max-w-4xl">
-              <p className="label text-white/50 mb-8 uppercase tracking-widest font-bold">EXPERT VERDICT</p>
-              {loading ? (
-                 <div className="label lowercase tracking-widest animate-pulse opacity-50">Reviewing specifications...</div>
-              ) : (
-                <p className="text-3xl font-mono italic leading-relaxed text-white/90">
-                   "{aiSummary}"
-                </p>
-              )}
-           </div>
+          <div className="rounded-2xl border border-black/[0.08] bg-[#1C1C1E] p-5 sm:p-6">
+            <p className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-white/45">AI summary</p>
+            {loading ? (
+              <p className="text-[15px] text-white/50">Reviewing specs…</p>
+            ) : (
+              <p className="text-[16px] leading-relaxed text-white/90 sm:text-[17px]">
+                {aiSummary?.replace(/^["']|["']$/g, '')}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
