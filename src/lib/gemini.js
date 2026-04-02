@@ -3,19 +3,67 @@ import { formatPriorityListForAi } from '../data/scenarios';
 const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.0-flash';
 const BASE = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
+async function parseGeminiResponse(res) {
+  const rawText = await res.text();
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    throw new Error(res.ok ? 'Invalid response from AI service.' : `Request failed (${res.status}).`);
+  }
+  if (!res.ok) {
+    const msg = data?.error?.message || data?.error?.status || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return data;
+}
+
+/** Throws a clear Error when the model returns no usable text (blocked, empty, or malformed). */
+function extractGeminiText(data) {
+  if (!data || typeof data !== 'object') {
+    throw new Error('Empty response from AI.');
+  }
+  if (data.error) {
+    throw new Error(data.error.message || data.error.status || 'API error');
+  }
+  const blockReason = data.promptFeedback?.blockReason;
+  if (blockReason) {
+    throw new Error(`Request blocked (${blockReason}). Try a different search term.`);
+  }
+  const candidate = data.candidates?.[0];
+  if (!candidate) {
+    throw new Error('No answer from AI. Check the API key, model name, or try again.');
+  }
+  const parts = candidate.content?.parts;
+  if (!Array.isArray(parts) || parts.length === 0) {
+    const fr = candidate.finishReason ? ` Reason: ${candidate.finishReason}.` : '';
+    throw new Error(`No text returned from AI.${fr} Try another model or a clearer car name.`);
+  }
+  const text = parts.map((p) => p?.text).filter(Boolean).join('');
+  if (!String(text).trim()) {
+    const fr = candidate.finishReason ? ` Reason: ${candidate.finishReason}.` : '';
+    throw new Error(`No text returned from AI.${fr} Try another model or a clearer car name.`);
+  }
+  return String(text);
+}
+
 export async function askGemini(prompt) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) return "API Key not found. Please set VITE_GEMINI_API_KEY in your .env file.";
 
-  const res = await fetch(`${BASE}?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }]
-    })
-  });
-  const data = await res.json();
-  return data.candidates[0].content.parts[0].text;
+  try {
+    const res = await fetch(`${BASE}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+    const data = await parseGeminiResponse(res);
+    return extractGeminiText(data);
+  } catch (e) {
+    return e?.message || 'AI request failed.';
+  }
 }
 
 const SYSTEM_CONTEXT = `You are an EV advisor for the Thai market. You speak like a knowledgeable,
@@ -147,14 +195,16 @@ Rules:
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
   });
-  const data = await res.json();
-  const raw = data.candidates[0].content.parts[0].text.trim().replace(/^```json/, '').replace(/```$/, '');
+  const data = await parseGeminiResponse(res);
+  const text = extractGeminiText(data);
+  const raw = text.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '');
 
   try {
     const parsed = JSON.parse(raw);
-    if (parsed.error) throw new Error(parsed.message);
+    if (parsed.error) throw new Error(parsed.message || 'Model could not find this car for Thailand.');
     return parsed;
-  } catch {
-    throw new Error('Could not parse car data. Try a more specific name.');
+  } catch (e) {
+    if (e instanceof Error && e.message && !e.message.includes('JSON')) throw e;
+    throw new Error('Could not parse car data. Try a more specific name (e.g. Mercedes-Benz EQB).');
   }
 }
