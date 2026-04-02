@@ -44,7 +44,7 @@ export function useCarImage(car) {
     return () => {
       cancelled = true;
     };
-  }, [car?.id, car?.brand, car?.model, car?.photo, car?.isCustom]);
+  }, [car?.id, car?.brand, car?.model, car?.photo, car?.isCustom, car?.imageSearchQuery]);
 
   const onImgError = () => setFailed(true);
 

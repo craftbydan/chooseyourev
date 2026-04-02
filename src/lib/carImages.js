@@ -123,7 +123,9 @@ export async function getCarImageUrl(car) {
     try {
       let url = null;
       if (car.isCustom) {
-        url = await imageFromSearchQuery(`${car.brand} ${car.model} electric vehicle`);
+        const q = car.imageSearchQuery?.trim();
+        if (q) url = await imageFromSearchQuery(q);
+        if (!url) url = await imageFromSearchQuery(`${car.brand} ${car.model} electric vehicle`);
         if (!url) url = await imageFromSearchQuery(`${car.brand} ${car.model}`);
       } else {
         url = await resolveBuiltin(car);

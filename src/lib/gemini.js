@@ -140,16 +140,96 @@ Do not recommend all of them. Be decisive.
   return askGemini(prompt);
 }
 
+function slugifyId(s) {
+  return (
+    String(s || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'custom-ev'
+  );
+}
+
+function inferSegmentFromPrice(priceThb) {
+  const p = Number(priceThb);
+  if (!p || Number.isNaN(p)) return 'middle';
+  if (p < 600000) return 'spare';
+  if (p <= 1000000) return 'middle';
+  return 'main';
+}
+
+/**
+ * Same fields as catalog cars.json (+ imageSearchQuery). Safe for scoring and UI.
+ */
+export function normalizeGeminiCar(raw) {
+  const brand = String(raw.brand || 'Unknown').trim();
+  const model = String(raw.model || 'EV').trim();
+  const base = slugifyId(`${brand}-${model}`);
+  const id =
+    raw.id && String(raw.id).trim()
+      ? String(raw.id)
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '')
+      : `${base}-${Date.now().toString(36)}`;
+
+  const body = String(raw.bodyStyle || 'crossover').toLowerCase();
+  const bodyStyle = ['hatchback', 'sedan', 'suv', 'crossover'].includes(body) ? body : 'crossover';
+
+  const drive = String(raw.driveType || 'FWD').toUpperCase().replace(/\s/g, '');
+  const driveType = ['FWD', 'RWD', 'AWD'].includes(drive) ? drive : 'FWD';
+
+  let photo = null;
+  if (raw.photo && /^https?:\/\//i.test(String(raw.photo))) {
+    const u = String(raw.photo).trim();
+    try {
+      photo = new URL(u).href;
+    } catch {
+      photo = null;
+    }
+  }
+
+  return {
+    id,
+    brand,
+    model,
+    countryOfOrigin: String(raw.countryOfOrigin || 'Unknown').trim(),
+    segment: ['spare', 'middle', 'main'].includes(raw.segment) ? raw.segment : inferSegmentFromPrice(raw.priceThb),
+    bodyStyle,
+    priceThb: raw.priceThb != null && !Number.isNaN(Number(raw.priceThb)) ? Number(raw.priceThb) : null,
+    rangeCity: Number(raw.rangeCity) || 0,
+    rangeHighway: Number(raw.rangeHighway) || 0,
+    dcChargeKw: Number(raw.dcChargeKw) || 0,
+    timeToEightyMin: Number(raw.timeToEightyMin) || 0,
+    zeroToHundred: Number(raw.zeroToHundred) || 0,
+    bootL: Number(raw.bootL) || 0,
+    seats: Math.min(7, Math.max(2, Number(raw.seats) || 5)),
+    warrantyYears: Number(raw.warrantyYears) || 0,
+    batteryWarrantyYears: Number(raw.batteryWarrantyYears) || 0,
+    bangkokServiceCenters: Number(raw.bangkokServiceCenters) || 0,
+    safetyScore: Math.min(5, Math.max(0, Number(raw.safetyScore) || 0)),
+    safetySource: String(raw.safetySource || 'estimated').trim(),
+    lengthMm: Number(raw.lengthMm) || 0,
+    widthMm: Number(raw.widthMm) || 0,
+    efficiencyKwhPer100km: Number(raw.efficiencyKwhPer100km) || 0,
+    driveType,
+    photo,
+    imageSearchQuery: raw.imageSearchQuery ? String(raw.imageSearchQuery).trim().slice(0, 200) : null,
+    isCustom: true,
+    dataSource: 'gemini-fetched',
+  };
+}
+
 export async function fetchCarData(carName) {
   const prompt = `
 You are a car data API for the Thai market. Return ONLY a valid JSON object.
 No explanation, no markdown, no backticks. Just raw JSON.
 
-Find current Thai market specs for: "${carName}"
+Find current Thai-market retail specs (prices usually include VAT) for: "${carName}"
 
-Return this exact structure:
+Return exactly these keys (same schema as our in-app catalog):
 {
-  "id": "brand-model-slug",
+  "id": "lowercase-brand-model-slug",
   "brand": "",
   "model": "",
   "countryOfOrigin": "",
@@ -173,18 +253,21 @@ Return this exact structure:
   "efficiencyKwhPer100km": 0.0,
   "driveType": "FWD | RWD | AWD",
   "photo": null,
+  "imageSearchQuery": "",
   "isCustom": true,
   "dataSource": "gemini-fetched"
 }
 
 Rules:
-- priceThb: official Thai price in baht. If unavailable, use null.
-- rangeCity: real-world city estimate (WLTP × 0.75 if only WLTP available)
-- rangeHighway: real-world highway at 120km/h (WLTP × 0.85 if needed)
-- segment: "spare" if under 600000, "middle" if 600000–1000000, "main" if over 1000000
-- countryOfOrigin: brand's home country, not assembly location
-- If the car is not sold in Thailand or data is unavailable, return:
-  { "error": "not_found", "message": "brief reason" }
+- priceThb: official Thai list / OTR Bangkok in baht including VAT when known; else null.
+- rangeCity / rangeHighway: realistic km (if only WLTP, approximate city as WLTP×0.75, highway at 120 km/h as WLTP×0.85).
+- segment from priceThb: spare < 600000; middle 600000–1000000; main > 1000000 (if price null, estimate from model positioning).
+- bangkokServiceCenters: rough count of brand service outlets in Greater Bangkok if known, else 0.
+- safetyScore: 1–5 stars if NCAP known, else 0 with safetySource "estimated".
+- photo: MUST be null unless you are certain of a stable https URL to a real vehicle image (official press pack). Never invent URLs.
+- imageSearchQuery: REQUIRED short English phrase for finding a photo (e.g. "Mercedes-Benz EQB" or "Volvo EX90 electric"). Used with Wikipedia image search in the app.
+- countryOfOrigin: brand home country (Germany, China, USA, Sweden, etc.), not CKD plant.
+- If not sold in Thailand or unknown: { "error": "not_found", "message": "brief reason" }
 `;
 
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -202,7 +285,7 @@ Rules:
   try {
     const parsed = JSON.parse(raw);
     if (parsed.error) throw new Error(parsed.message || 'Model could not find this car for Thailand.');
-    return parsed;
+    return normalizeGeminiCar(parsed);
   } catch (e) {
     if (e instanceof Error && e.message && !e.message.includes('JSON')) throw e;
     throw new Error('Could not parse car data. Try a more specific name (e.g. Mercedes-Benz EQB).');

@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore';
 import { getCarExplanation } from '../lib/gemini.js';
 import { cityRangeLabel, monthlyPayment, formatCurrency } from '../utils/humanize.js';
 import { useCarImage } from '../hooks/useCarImage';
+import CarDetailModal from './CarDetailModal';
 import { clsx } from 'clsx';
 
 const CarCard = ({
@@ -12,10 +13,12 @@ const CarCard = ({
   compact = false,
   scenarioPriorityOrder = [],
   onCalculate,
+  peerCars = [],
 }) => {
   const { addToCompare, compareList, removeFromCompare } = useStore();
   const [explanation, setExplanation] = useState('');
   const [loading, setLoading] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const isSelected = compareList.includes(car.id);
   const monthlyPay = monthlyPayment(car.priceThb);
@@ -95,8 +98,15 @@ const CarCard = ({
           </div>
         ) : null}
 
+        <button
+          type="button"
+          className="absolute inset-0 z-[4] cursor-pointer bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#007AFF]"
+          aria-label={`View full details and scores for ${car.brand} ${car.model}`}
+          onClick={() => setDetailOpen(true)}
+        />
+
         {car.isCustom && (
-          <div className="absolute right-2 top-2 z-[3] rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+          <div className="pointer-events-none absolute right-2 top-2 z-[5] rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
             Custom
           </div>
         )}
@@ -104,7 +114,7 @@ const CarCard = ({
         {index !== undefined && (
           <div
             className={clsx(
-              'absolute left-2 top-2 z-[3] flex items-center justify-center rounded-full bg-white/95 font-semibold text-[#1C1C1E] shadow-sm backdrop-blur-sm',
+              'pointer-events-none absolute left-2 top-2 z-[5] flex items-center justify-center rounded-full bg-white/95 font-semibold text-[#1C1C1E] shadow-sm backdrop-blur-sm',
               compact ? 'h-7 w-7 text-[13px]' : 'left-3 top-3 h-9 w-9 text-[15px]'
             )}
           >
@@ -214,6 +224,8 @@ const CarCard = ({
           </button>
         </div>
       </div>
+
+      {detailOpen && <CarDetailModal car={car} peerCars={peerCars} onClose={() => setDetailOpen(false)} />}
     </div>
   );
 };

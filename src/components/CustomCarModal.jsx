@@ -105,7 +105,13 @@ const CustomCarModal = ({ onClose }) => {
           {previewCar && (
             <div className="mt-6 space-y-4 border-t border-black/[0.08] pt-6">
               <p className="text-[13px] font-medium text-[#8E8E93]">Preview</p>
-              <CarCard car={previewCar} isHero scenarioPriorityOrder={[]} onCalculate={() => {}} />
+              <CarCard
+                car={previewCar}
+                isHero
+                scenarioPriorityOrder={[]}
+                peerCars={previewCar ? [previewCar] : []}
+                onCalculate={() => {}}
+              />
               <button
                 type="button"
                 onClick={handleConfirm}

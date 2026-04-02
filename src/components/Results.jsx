@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/useStore';
-import { calculateScores } from '../lib/scoring';
+import { calculateScores, getPeerCarsForScoring } from '../lib/scoring';
 import CarCard from './CarCard';
 import FinanceCalc from './FinanceCalc';
 import CustomCarModal from './CustomCarModal';
@@ -21,11 +21,20 @@ const Results = ({ onEditLifestyle }) => {
   const [calculatingCar, setCalculatingCar] = useState(null);
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
 
+  const segmentCars = useMemo(() => {
+    if (!selectedSegment) return [];
+    return fleet.filter((c) => c.segment === selectedSegment);
+  }, [fleet, selectedSegment]);
+
+  const peerCars = useMemo(
+    () => getPeerCarsForScoring(segmentCars, scenarioPriorityOrder),
+    [segmentCars, scenarioPriorityOrder]
+  );
+
   const scoredCars = useMemo(() => {
     if (!selectedSegment) return [];
-    const segmentCars = fleet.filter((c) => c.segment === selectedSegment);
     return calculateScores(segmentCars, scenarioPriorityOrder);
-  }, [fleet, selectedSegment, scenarioPriorityOrder]);
+  }, [selectedSegment, segmentCars, scenarioPriorityOrder]);
 
   const primaryGrid = scoredCars.slice(0, GRID_PAGE_SIZE);
   const others = scoredCars.slice(GRID_PAGE_SIZE);
@@ -102,6 +111,7 @@ const Results = ({ onEditLifestyle }) => {
                     compact
                     isHero={i === 0}
                     scenarioPriorityOrder={scenarioPriorityOrder}
+                    peerCars={peerCars}
                     onCalculate={setCalculatingCar}
                   />
                 ))}
@@ -131,6 +141,7 @@ const Results = ({ onEditLifestyle }) => {
                   compact
                   isHero={false}
                   scenarioPriorityOrder={scenarioPriorityOrder}
+                  peerCars={peerCars}
                   onCalculate={setCalculatingCar}
                 />
               ))}
