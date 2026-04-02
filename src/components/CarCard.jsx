@@ -173,56 +173,89 @@ const CarCard = ({
             </div>
           )}
 
-          <div className={clsx('space-y-2 border-t border-black/[0.08] pt-3', !compact && 'space-y-3 pt-5')}>
-            <div className="flex justify-between gap-2">
-              <span className={clsx('font-medium text-[#8E8E93]', compact ? 'text-[12px]' : 'text-[13px]')}>City range</span>
-              <span
-                className={clsx(
-                  'max-w-[58%] text-right font-medium text-[#1C1C1E]',
-                  compact ? 'text-[13px]' : 'text-[15px]'
-                )}
-              >
-                {compact ? `${car.rangeCity} km` : cityRangeLabel(car.rangeCity)}
-              </span>
-            </div>
-            <div className="flex justify-between gap-2">
-              <span className={clsx('font-medium text-[#8E8E93]', compact ? 'text-[12px]' : 'text-[13px]')}>To 80%</span>
-              <span className={clsx('text-right font-medium text-[#1C1C1E]', compact ? 'text-[13px]' : 'text-[15px]')}>
-                ~{car.timeToEightyMin} min
-              </span>
-            </div>
-            <div className="flex justify-between gap-2">
-              <span className={clsx('font-medium text-[#8E8E93]', compact ? 'text-[12px]' : 'text-[13px]')}>Loan est.</span>
-              <span className={clsx('text-right font-medium text-[#1C1C1E]', compact ? 'text-[13px]' : 'text-[15px]')}>
-                {hasPrice ? `${formatCurrency(monthlyPay)}/mo` : '—'}
-              </span>
-            </div>
+          <div
+            className={clsx(
+              'border-t border-black/[0.08]',
+              compact ? 'mt-3 pt-1' : 'mt-0 space-y-3 border-0 pt-5'
+            )}
+          >
+            <dl
+              className={clsx(
+                compact && 'divide-y divide-black/[0.08]',
+                !compact && 'space-y-3'
+              )}
+            >
+              <div className={clsx('flex items-baseline justify-between gap-3', compact && 'py-2.5')}>
+                <dt className={clsx('shrink-0 font-medium text-[#8E8E93]', compact ? 'text-[12px]' : 'text-[13px]')}>
+                  City range
+                </dt>
+                <dd
+                  className={clsx(
+                    'min-w-0 text-right font-semibold tabular-nums text-[#1C1C1E]',
+                    compact ? 'text-[14px]' : 'max-w-[58%] text-[15px]'
+                  )}
+                >
+                  {compact ? `${car.rangeCity} km` : cityRangeLabel(car.rangeCity)}
+                </dd>
+              </div>
+              <div className={clsx('flex items-baseline justify-between gap-3', compact && 'py-2.5')}>
+                <dt className={clsx('shrink-0 font-medium text-[#8E8E93]', compact ? 'text-[12px]' : 'text-[13px]')}>
+                  To 80%
+                </dt>
+                <dd
+                  className={clsx(
+                    'text-right font-semibold tabular-nums text-[#1C1C1E]',
+                    compact ? 'text-[14px]' : 'text-[15px]'
+                  )}
+                >
+                  ~{car.timeToEightyMin} min
+                </dd>
+              </div>
+              <div className={clsx('flex items-baseline justify-between gap-3', compact && 'py-2.5')}>
+                <dt className={clsx('shrink-0 font-medium text-[#8E8E93]', compact ? 'text-[12px]' : 'text-[13px]')}>
+                  Loan est.
+                </dt>
+                <dd
+                  className={clsx(
+                    'text-right font-semibold tabular-nums text-[#1C1C1E]',
+                    compact ? 'text-[14px]' : 'text-[15px]'
+                  )}
+                >
+                  {hasPrice ? `${formatCurrency(monthlyPay)}/mo` : '—'}
+                </dd>
+              </div>
+            </dl>
           </div>
         </div>
 
-        <div className={clsx('flex gap-2', compact ? 'mt-4 flex-col sm:flex-row' : 'mt-8 flex-col sm:flex-row')}>
+        <div
+          className={clsx(
+            'flex gap-2',
+            compact ? 'mt-5 flex-row' : 'mt-8 flex-col sm:flex-row'
+          )}
+        >
           <button
             type="button"
             onClick={() => onCalculate(car)}
             className={clsx(
-              'min-h-[44px] flex-1 rounded-xl border border-[#C7C7CC] bg-white font-semibold text-[#007AFF] transition-colors active:bg-[#F2F2F7]',
-              compact ? 'py-2.5 text-[14px]' : 'py-3 text-[15px]'
+              'min-h-[48px] min-w-0 flex-1 rounded-xl border border-black/[0.12] bg-white font-semibold text-[#007AFF] shadow-sm transition-colors active:bg-[#F2F2F7]',
+              compact ? 'px-2 text-[13px] sm:text-[14px]' : 'py-3 text-[15px]'
             )}
           >
-            Calculate
+            {compact ? 'Finance' : 'Calculate'}
           </button>
           <button
             type="button"
             onClick={handleCompare}
             className={clsx(
-              'min-h-[44px] flex-1 rounded-xl font-semibold transition-colors active:scale-[0.99]',
-              compact ? 'py-2.5 text-[14px]' : 'py-3 text-[15px]',
+              'min-h-[48px] min-w-0 flex-1 rounded-xl font-semibold transition-colors active:scale-[0.99]',
+              compact ? 'px-2 text-[13px] sm:text-[14px]' : 'py-3 text-[15px]',
               isSelected
                 ? 'bg-[#007AFF] text-white shadow-sm active:opacity-90'
                 : 'border-2 border-[#007AFF] bg-white text-[#007AFF] hover:bg-[rgba(0,122,255,0.06)] active:bg-[rgba(0,122,255,0.1)]'
             )}
           >
-            {isSelected ? 'In compare' : 'Add to compare'}
+            {isSelected ? 'In compare' : compact ? 'Compare' : 'Add to compare'}
           </button>
         </div>
       </div>

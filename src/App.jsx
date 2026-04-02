@@ -45,7 +45,13 @@ function App() {
             className="flex min-h-[44px] min-w-0 items-center gap-3 rounded-xl p-1 text-left active:opacity-70"
             aria-label="Choose Your EV — home / start over"
           >
-            <div className="h-9 w-9 shrink-0 rounded-xl bg-[#007AFF] shadow-sm" />
+            <img
+              src="/og-image.png"
+              alt=""
+              width={36}
+              height={36}
+              className="h-9 w-9 shrink-0 rounded-xl object-cover shadow-sm ring-1 ring-black/[0.08]"
+            />
             <div className="flex min-w-0 flex-col sm:flex-row sm:items-baseline sm:gap-2">
               <span className="text-[17px] font-semibold leading-tight tracking-tight text-[#1C1C1E] md:text-[19px]">
                 Choose Your EV
