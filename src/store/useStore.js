@@ -1,12 +1,22 @@
 import { create } from 'zustand';
 import initialCars from '../data/cars.json';
 import { DEFAULT_SCENARIO_ORDER } from '../data/scenarios';
+import {
+  readCustomCarsFromCookie,
+  writeCustomCarsToCookie,
+} from '../lib/customCarsCookie.js';
+
+const catalogCars = [...initialCars];
+const bootCustom = readCustomCarsFromCookie();
+
+function buildFleet(customCars) {
+  return [...catalogCars, ...customCars];
+}
 
 export const useStore = create((set) => ({
-  fleet: initialCars,
-  customCars: [],
-  selectedSegment: null, // 'spare', 'middle', 'main'
-  /** Ordered IDs: index 0 = highest priority for matching */
+  fleet: buildFleet(bootCustom),
+  customCars: bootCustom,
+  selectedSegment: null,
   scenarioPriorityOrder: [...DEFAULT_SCENARIO_ORDER],
   compareList: [],
 
@@ -29,10 +39,16 @@ export const useStore = create((set) => ({
   clearCompare: () => set({ compareList: [] }),
 
   addCustomCar: (car) =>
-    set((state) => ({
-      customCars: [...state.customCars, car],
-      fleet: [...state.fleet, car],
-    })),
+    set((state) => {
+      if (!car?.id) return state;
+      const withoutDup = state.customCars.filter((c) => c.id !== car.id);
+      const customCars = [...withoutDup, car];
+      writeCustomCarsToCookie(customCars);
+      return {
+        customCars,
+        fleet: buildFleet(customCars),
+      };
+    }),
 
   reset: () =>
     set({
