@@ -46,7 +46,7 @@ function App() {
             aria-label="Choose Your EV — home / start over"
           >
             <img
-              src="/og-image.png"
+              src="/favicon.png"
               alt=""
               width={36}
               height={36}
