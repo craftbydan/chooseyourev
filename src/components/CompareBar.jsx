@@ -21,8 +21,8 @@ function CompareThumb({ car, onRemove }) {
       <button
         type="button"
         onClick={() => onRemove(car.id)}
-        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#8E8E93] text-[10px] font-bold text-white shadow-sm"
-        aria-label={`Remove ${car.model}`}
+        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#8E8E93] text-[10px] font-bold text-white shadow-sm ring-2 ring-[#F2F2F7] active:opacity-80"
+        aria-label={`Remove ${car.model} from compare`}
       >
         ×
       </button>
@@ -36,19 +36,35 @@ const CompareBar = ({ onCompare }) => {
   if (compareList.length === 0) return null;
 
   const selectedCars = compareList.map((id) => fleet.find((c) => c.id === id)).filter(Boolean);
+  const n = selectedCars.length;
+  const needMore = Math.max(0, 2 - n);
+  const canOpen = n >= 2;
 
   return (
     <div className="safe-pb fixed bottom-0 left-0 right-0 z-[80] border-t border-black/[0.1] bg-[#F2F2F7]/95 px-4 py-4 text-[#1C1C1E] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] backdrop-blur-xl md:px-10 md:py-5">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex w-full items-center gap-4 sm:w-auto">
-          <h3 className="text-[15px] font-semibold tracking-tight">Compare</h3>
-          <div className="flex flex-1 items-center gap-2 overflow-x-auto pb-1 sm:flex-initial sm:pb-0">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:max-w-[min(100%,42rem)]">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h3 className="text-[15px] font-semibold tracking-tight">Compare</h3>
+            <span className="text-[13px] text-[#8E8E93]">
+              {n} of 2–3 cars
+              {needMore > 0 && (
+                <span className="font-medium text-[#1C1C1E]"> · tap “Add to compare” on another card</span>
+              )}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 sm:pb-0">
             {selectedCars.map((car) => (
               <CompareThumb key={car.id} car={car} onRemove={removeFromCompare} />
             ))}
-            {selectedCars.length < 3 && (
-              <div className="flex h-11 w-16 flex-shrink-0 items-center justify-center rounded-lg border border-dashed border-[#C7C7CC] text-lg text-[#C7C7CC] sm:h-12 sm:w-[4.5rem]">
-                +
+            {n < 3 && (
+              <div
+                className="flex h-11 w-16 flex-shrink-0 flex-col items-center justify-center rounded-lg border border-dashed border-[#C7C7CC] bg-white/50 text-[#C7C7CC] sm:h-12 sm:w-[4.5rem]"
+                title="Empty slot — choose another car above"
+                aria-hidden
+              >
+                <span className="text-lg leading-none">+</span>
+                {needMore > 0 && <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-wide text-[#AEAEB2]">Need {needMore}</span>}
               </div>
             )}
           </div>
@@ -58,22 +74,22 @@ const CompareBar = ({ onCompare }) => {
           <button
             type="button"
             onClick={clearCompare}
-            className="min-h-[44px] px-2 text-[15px] font-normal text-[#007AFF]"
+            className="min-h-[44px] shrink-0 px-2 text-[15px] font-normal text-[#007AFF] active:opacity-70"
           >
-            Clear
+            Clear all
           </button>
           <button
             type="button"
-            disabled={selectedCars.length < 2}
+            disabled={!canOpen}
             onClick={onCompare}
             className={clsx(
-              'min-h-[44px] rounded-xl px-6 text-[15px] font-semibold text-white transition-opacity',
-              selectedCars.length < 2
-                ? 'cursor-not-allowed bg-[#C7C7CC]'
-                : 'bg-[#007AFF] shadow-sm active:opacity-85'
+              'min-h-[44px] shrink-0 rounded-xl px-6 text-[15px] font-semibold transition-opacity',
+              !canOpen
+                ? 'cursor-not-allowed bg-[#E5E5EA] text-[#8E8E93]'
+                : 'bg-[#007AFF] text-white shadow-sm active:opacity-85'
             )}
           >
-            Compare {selectedCars.length}
+            {canOpen ? `View comparison (${n})` : 'Pick 1 more car'}
           </button>
         </div>
       </div>

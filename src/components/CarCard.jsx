@@ -217,10 +217,12 @@ const CarCard = ({
             className={clsx(
               'min-h-[44px] flex-1 rounded-xl font-semibold transition-colors active:scale-[0.99]',
               compact ? 'py-2.5 text-[14px]' : 'py-3 text-[15px]',
-              isSelected ? 'bg-[#007AFF] text-white shadow-sm' : 'bg-[#E5E5EA] text-[#1C1C1E] active:bg-[#D1D1D6]'
+              isSelected
+                ? 'bg-[#007AFF] text-white shadow-sm active:opacity-90'
+                : 'border-2 border-[#007AFF] bg-white text-[#007AFF] hover:bg-[rgba(0,122,255,0.06)] active:bg-[rgba(0,122,255,0.1)]'
             )}
           >
-            {isSelected ? 'In compare' : 'Compare'}
+            {isSelected ? 'In compare' : 'Add to compare'}
           </button>
         </div>
       </div>

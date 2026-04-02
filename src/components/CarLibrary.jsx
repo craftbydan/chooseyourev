@@ -79,7 +79,7 @@ function LibraryRow({ car }) {
           !full && !inCompare && 'text-[#007AFF] active:opacity-70'
         )}
       >
-        {inCompare ? 'Remove' : full ? 'Full' : 'Compare'}
+        {inCompare ? 'Remove' : full ? 'Full' : 'Add'}
       </button>
     </div>
   );
