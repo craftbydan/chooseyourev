@@ -1,21 +1,59 @@
 import { formatPriorityListForAi } from '../data/scenarios';
 
-const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.0-flash';
-const BASE = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+/** When unset, try Gemini 3 Flash preview first, then stable 2.5 Flash. Override with VITE_GEMINI_MODEL (comma = fallbacks). */
+const DEFAULT_MODEL_CHAIN = ['gemini-3-flash-preview', 'gemini-2.5-flash'];
 
-async function parseGeminiResponse(res) {
-  const rawText = await res.text();
-  let data;
-  try {
-    data = JSON.parse(rawText);
-  } catch {
-    throw new Error(res.ok ? 'Invalid response from AI service.' : `Request failed (${res.status}).`);
+function getModelChain() {
+  const env = import.meta.env.VITE_GEMINI_MODEL?.trim();
+  if (!env) return [...DEFAULT_MODEL_CHAIN];
+  return env
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function endpoint(model) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+}
+
+function isRetryableModelError(res, data) {
+  if (res.ok) return false;
+  const msg = String(data?.error?.message || '').toLowerCase();
+  if (res.status === 404) return true;
+  if (msg.includes('not found') && (msg.includes('model') || msg.includes('models/'))) return true;
+  if (msg.includes('invalid') && msg.includes('model')) return true;
+  if (msg.includes('does not exist')) return true;
+  return false;
+}
+
+/**
+ * POST generateContent; on unknown-model errors, tries the next model in the chain.
+ */
+async function callGeminiApi(apiKey, body) {
+  const chain = getModelChain();
+  let lastErr = 'AI request failed.';
+
+  for (let i = 0; i < chain.length; i++) {
+    const model = chain[i];
+    const res = await fetch(`${endpoint(model)}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const rawText = await res.text();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      if (res.ok) throw new Error('Invalid response from AI service.');
+      data = {};
+    }
+    if (res.ok) return data;
+    lastErr = data?.error?.message || data?.error?.status || `HTTP ${res.status}`;
+    if (isRetryableModelError(res, data) && i < chain.length - 1) continue;
+    throw new Error(lastErr);
   }
-  if (!res.ok) {
-    const msg = data?.error?.message || data?.error?.status || `HTTP ${res.status}`;
-    throw new Error(msg);
-  }
-  return data;
+  throw new Error(lastErr);
 }
 
 /** Throws a clear Error when the model returns no usable text (blocked, empty, or malformed). */
@@ -52,14 +90,9 @@ export async function askGemini(prompt) {
   if (!apiKey) return "API Key not found. Please set VITE_GEMINI_API_KEY in your .env file.";
 
   try {
-    const res = await fetch(`${BASE}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
+    const data = await callGeminiApi(apiKey, {
+      contents: [{ parts: [{ text: prompt }] }],
     });
-    const data = await parseGeminiResponse(res);
     return extractGeminiText(data);
   } catch (e) {
     return e?.message || 'AI request failed.';
@@ -273,12 +306,9 @@ Rules:
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) throw new Error("API Key not found.");
 
-  const res = await fetch(`${BASE}?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+  const data = await callGeminiApi(apiKey, {
+    contents: [{ parts: [{ text: prompt }] }],
   });
-  const data = await parseGeminiResponse(res);
   const text = extractGeminiText(data);
   const raw = text.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '');
 
