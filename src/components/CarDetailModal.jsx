@@ -108,7 +108,7 @@ const CarDetailModal = ({ car, peerCars, onClose }) => {
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain pb-[env(safe-area-inset-bottom,0px)]">
           <div className="relative aspect-[16/10] w-full bg-[#E5E5EA] sm:aspect-[2/1]">
             {loading && <div className="absolute inset-0 animate-pulse bg-[#D1D1D6]" />}
             {url ? (

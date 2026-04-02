@@ -26,7 +26,7 @@ const SegmentGate = () => {
   ];
 
   return (
-    <div className="step-transition mx-auto max-w-lg px-4 pb-16 pt-2 sm:max-w-2xl sm:px-6 md:max-w-4xl md:pt-4">
+    <div className="step-transition mx-auto max-w-lg px-4 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] pt-2 sm:max-w-2xl sm:px-6 md:max-w-4xl md:pb-16 md:pt-4">
       <p className="sr-only">Choose your budget band to continue.</p>
       <div className="mb-8">
         <p className="text-[13px] font-medium uppercase tracking-wide text-[#8E8E93]">Step 1 of 3</p>

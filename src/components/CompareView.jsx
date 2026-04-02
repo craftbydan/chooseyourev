@@ -28,6 +28,8 @@ const CompareView = ({ onClose }) => {
   const n = selectedCars.length;
 
   const gridTemplate = `minmax(10.5rem, 13rem) repeat(${n}, minmax(0, 1fr))`;
+  /** Wide compare tables: horizontal scroll on narrow phones instead of squashed columns */
+  const gridMinWidth = `max(100%, calc(10.25rem + ${n} * 5.25rem))`;
 
   const sections = [
     {
@@ -156,7 +158,9 @@ const CompareView = ({ onClose }) => {
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-4 sm:px-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-[max(2rem,calc(1rem+env(safe-area-inset-bottom,0px)))] pt-4 sm:px-6">
+          <div className="-mx-4 overflow-x-auto overscroll-x-contain px-4 [-webkit-overflow-scrolling:touch] sm:mx-0 sm:overflow-x-visible sm:px-0">
+            <div style={{ minWidth: gridMinWidth }}>
           {/* Car column headers + match */}
           <div
             className="mb-6 gap-px overflow-hidden rounded-xl border border-black/[0.08] bg-black/[0.08] shadow-sm"
@@ -241,6 +245,8 @@ const CompareView = ({ onClose }) => {
               </div>
             </div>
           ))}
+            </div>
+          </div>
 
           <div className="rounded-2xl border border-black/[0.08] bg-[#1C1C1E] p-5 sm:p-6">
             <p className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-white/45">AI summary</p>

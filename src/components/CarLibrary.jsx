@@ -73,7 +73,7 @@ function LibraryRow({ car }) {
         disabled={full}
         onClick={() => (inCompare ? removeFromCompare(car.id) : addToCompare(car.id))}
         className={clsx(
-          'min-h-[40px] shrink-0 rounded-lg px-3 text-[14px] font-semibold transition-opacity',
+          'min-h-[44px] shrink-0 rounded-lg px-3 text-[14px] font-semibold transition-opacity',
           full && 'cursor-not-allowed text-[#C7C7CC]',
           !full && inCompare && 'text-[#007AFF]',
           !full && !inCompare && 'text-[#007AFF] active:opacity-70'
@@ -154,11 +154,11 @@ const CarLibrary = ({ onClose }) => {
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-3 sm:px-5">
           <p className="mb-2 text-[13px] text-[#8E8E93]">
             {filtered.length} car{filtered.length === 1 ? '' : 's'}
           </p>
-          <ul className="flex flex-col gap-2 pb-4">
+          <ul className="flex flex-col gap-2 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
             {filtered.map((car) => (
               <li key={car.id}>
                 <LibraryRow car={car} />

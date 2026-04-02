@@ -64,7 +64,7 @@ const CustomCarModal = ({ onClose }) => {
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 pb-[max(1rem,calc(0.75rem+env(safe-area-inset-bottom,0px)))] sm:px-5 sm:py-5 sm:pb-5">
           <form onSubmit={handleLookup} className="space-y-3">
             <label htmlFor="custom-car-search" className="sr-only">
               Car name

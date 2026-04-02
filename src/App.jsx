@@ -34,7 +34,8 @@ function App() {
     <div className="min-h-screen min-h-[100dvh] bg-[#F2F2F7] text-[#1C1C1E] selection:bg-[#007AFF]/25 selection:text-[#1C1C1E]">
       <nav
         className={clsx(
-          'safe-pt-nav fixed left-0 right-0 top-0 z-[150] border-b border-black/[0.08] px-4 py-3 sm:px-6 md:px-10 md:py-4',
+          'fixed left-0 right-0 top-0 z-[150] border-b border-black/[0.08] px-4 sm:px-6 md:px-10',
+          'pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-3 md:pb-4 md:pt-[calc(1rem+env(safe-area-inset-top,0px))]',
           'bg-[#F2F2F7]/85 backdrop-blur-xl backdrop-saturate-150'
         )}
       >
@@ -77,7 +78,7 @@ function App() {
         </div>
       </nav>
 
-      <main className="pt-[5.5rem] sm:pt-24 md:pt-28">
+      <main className="pt-[calc(7rem+env(safe-area-inset-top,0px))] sm:pt-[calc(6.5rem+env(safe-area-inset-top,0px))] md:pt-[calc(7rem+env(safe-area-inset-top,0px))]">
         {step === 1 && <SegmentGate />}
         
         {step === 2 && (

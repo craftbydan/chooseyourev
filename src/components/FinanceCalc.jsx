@@ -69,7 +69,7 @@ const FinanceCalc = ({ car, onClose }) => {
       onClick={onClose}
     >
       <div
-        className="flex h-full w-full max-w-md flex-col border-l border-black/[0.08] bg-[#F2F2F7] shadow-2xl sm:max-w-lg sm:rounded-l-[1.25rem]"
+        className="flex h-full max-h-[100dvh] w-full max-w-md flex-col border-l border-black/[0.08] bg-[#F2F2F7] pt-[env(safe-area-inset-top,0px)] shadow-2xl sm:max-w-lg sm:rounded-l-[1.25rem]"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.08] px-4 py-3 sm:px-5">
@@ -89,7 +89,7 @@ const FinanceCalc = ({ car, onClose }) => {
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 pb-[max(1rem,calc(0.75rem+env(safe-area-inset-bottom,0px)))] sm:px-5 sm:py-5 sm:pb-5">
           <p className="mb-6 text-[28px] font-semibold tabular-nums tracking-tight text-[#007AFF] sm:text-[32px]">
             {priceThb > 0 ? formatCurrency(priceThb) : 'Price not set'}
           </p>

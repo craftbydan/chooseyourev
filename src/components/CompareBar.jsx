@@ -21,10 +21,12 @@ function CompareThumb({ car, onRemove }) {
       <button
         type="button"
         onClick={() => onRemove(car.id)}
-        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#8E8E93] text-[10px] font-bold text-white shadow-sm ring-2 ring-[#F2F2F7] active:opacity-80"
+        className="absolute -right-1 -top-1 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-transparent text-[14px] font-bold text-[#8E8E93] active:opacity-80"
         aria-label={`Remove ${car.model} from compare`}
       >
-        ×
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#8E8E93] text-[10px] text-white shadow-sm ring-2 ring-[#F2F2F7]">
+          ×
+        </span>
       </button>
     </div>
   );
@@ -41,7 +43,7 @@ const CompareBar = ({ onCompare }) => {
   const canOpen = n >= 2;
 
   return (
-    <div className="safe-pb fixed bottom-0 left-0 right-0 z-[80] border-t border-black/[0.1] bg-[#F2F2F7]/95 px-4 py-4 text-[#1C1C1E] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] backdrop-blur-xl md:px-10 md:py-5">
+    <div className="fixed bottom-0 left-0 right-0 z-[80] border-t border-black/[0.1] bg-[#F2F2F7]/95 px-4 pt-4 text-[#1C1C1E] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] backdrop-blur-xl md:px-10 md:pt-5 md:pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
       <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
         <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:max-w-[min(100%,42rem)]">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">

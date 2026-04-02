@@ -95,7 +95,7 @@ const ScenarioCards = ({ onFindMyCar, onBackToBudget }) => {
   };
 
   return (
-    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 sm:max-w-xl sm:px-6 md:max-w-2xl md:pb-36 md:pt-6">
+    <div className="mx-auto max-w-lg px-4 pb-[calc(9rem+env(safe-area-inset-bottom,0px))] pt-2 sm:max-w-xl sm:px-6 md:max-w-2xl md:pb-36 md:pt-6">
       <div className="mb-8 flex flex-col gap-2 sm:mb-10">
         {onBackToBudget && (
           <button

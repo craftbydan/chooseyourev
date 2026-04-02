@@ -43,7 +43,8 @@ const Results = ({ onEditLifestyle }) => {
     <div
       className={clsx(
         'mx-auto min-h-screen max-w-7xl px-4 pb-12 pt-2 step-transition sm:px-6 md:pb-20 md:pt-6',
-        compareList.length > 0 && 'pb-40 sm:pb-44'
+        compareList.length > 0 &&
+          'pb-[calc(11rem+env(safe-area-inset-bottom,0px))] sm:pb-[calc(11.5rem+env(safe-area-inset-bottom,0px))]'
       )}
     >
       <div className="mb-8 flex flex-col gap-4 sm:mb-10 md:mb-12">
